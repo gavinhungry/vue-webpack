@@ -1,0 +1,45 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:vue/essential"
+  ],
+
+  "parserOptions": {
+    "ecmaVersion": 9
+  },
+
+  "rules": {
+    "no-trailing-spaces": 1,
+    "no-tabs": 1,
+    "semi": 1
+  },
+
+  "env": {
+    "node": true,
+    "browser": false
+  },
+
+  "globals": {
+    "APP": false,
+    "CONFIG": false
+  },
+
+  "overrides": [
+    {
+      "files": ["src/**/*"],
+      "env": {
+        "node": false,
+        "browser": true
+      }
+    }, {
+      "files": ["test/**/*"],
+      "env": {
+        "mocha": true
+      },
+      "globals": {
+        "mount": false,
+        "expect": false
+      }
+    }
+  ]
+}
