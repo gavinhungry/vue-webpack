@@ -14,17 +14,30 @@ npm run dev
 ```
 
 ### Linting
-To manually lint with [ESLint](https://eslint.org):
+To manually lint JavaScript with [ESLint](https://eslint.org):
 
 ```sh
-npm run lint # or `npm run lint -- -w` to watch
+npm run jslint
+```
+
+To lint CSS with [stylelint](https://stylelint.io/) (including component
+styles):
+
+```sh
+npm run csslint
+```
+
+To lint both JavaScript and CSS, use:
+
+```sh
+npm run lint
 ```
 
 ### Testing
 Run all tests defined in `test/**/*.spec.js`:
 
 ```sh
-npm run test # or `npm run test -- -w` to watch
+npm run test
 ```
 
 Production

@@ -1,13 +1,15 @@
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const nodeExternals = require('webpack-node-externals');
 const path = require('path');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const webpack = require('webpack');
 const { VueLoaderPlugin } = require('vue-loader');
 
 const BASE_FILENAME = path.basename(require.main.filename);
 const IS_DEV = BASE_FILENAME === 'webpack-dev-server.js';
 const IS_TEST = BASE_FILENAME === 'mocha-webpack';
+const IS_PROD = !IS_DEV && !IS_TEST;
 
 const DEPS_DIR = path.resolve(__dirname, 'node_modules');
 const SRC_DIR = path.resolve(__dirname, 'src');
@@ -23,7 +25,7 @@ let merge = ({ common = [], development = [], production = [], test = [] }) => {
 };
 
 module.exports = {
-  mode: IS_DEV || IS_TEST ? 'development' : 'production',
+  mode: IS_PROD ? 'production' : 'development',
 
   externals: merge({
     test: [
@@ -35,8 +37,23 @@ module.exports = {
     hints: false
   },
 
+  optimization: {
+    splitChunks: {
+      chunks: 'initial',
+      filename: 'vendor.js'
+    },
+
+    minimize: IS_PROD,
+    minimizer: merge({
+      production: [
+        new TerserPlugin()
+      ]
+    })
+  },
+
   devServer: {
-    contentBase: STATIC_DIR
+    contentBase: STATIC_DIR,
+    port: 8080
   },
 
   entry: [
@@ -53,7 +70,8 @@ module.exports = {
     extensions: ['.js', '.json', '.vue'],
     alias: {
       Components: path.join(SRC_DIR, 'components'),
-      Lib: path.join(SRC_DIR, 'lib')
+      Lib: path.join(SRC_DIR, 'lib'),
+      Workers: path.join(SRC_DIR, 'workers')
     }
   },
 
@@ -66,12 +84,12 @@ module.exports = {
       },
       {
         test: /\.vue$/,
-        include: SRC_DIR,
+        include: [SRC_DIR, DEPS_DIR],
         loader: 'vue-loader'
       },
       {
         test: /\.postcss$/,
-        include: SRC_DIR,
+        include: [SRC_DIR, DEPS_DIR],
         use: [
           'vue-style-loader',
           'css-loader',
@@ -81,7 +99,9 @@ module.exports = {
               plugins: merge({
                 common: [
                   require('postcss-import'),
-                  require('postcss-cssnext')
+                  require('postcss-preset-env')({
+                    stage: 0
+                  })
                 ],
 
                 production: [
@@ -89,14 +109,8 @@ module.exports = {
                 ]
               })
             }
-          },
-          {
-            loader: 'text-transform-loader',
-            options: {
-              prependText: `@import '${SRC_DIR}/props.css';`
-            }
           }
-        ],
+        ]
       },
       {
         test: /\.css$/,
@@ -122,10 +136,18 @@ module.exports = {
         APP: JSON.stringify({
           author: PKG.author,
           version: PKG.version,
-          homepage: PKG.homepage
+          homepage: PKG.homepage,
+          production: IS_PROD
         }),
 
         CONFIG: JSON.stringify(CONFIG)
+      })
+    ],
+
+    development: [
+      new BundleAnalyzerPlugin({
+        analyzerPort: 8081,
+        openAnalyzer: false
       })
     ],
 
@@ -134,7 +156,6 @@ module.exports = {
         'process.env.NODE_ENV': JSON.stringify('production')
       }),
 
-      new UglifyJsPlugin(),
       new CopyWebpackPlugin([STATIC_DIR])
     ]
   })
